@@ -2,40 +2,42 @@ import shutil
 import os
 from pathlib import Path
 
+class FileMover:
+   def __init__(self, destination_folder, directory):
+      self.directory = Path(directory)
+      self.destination_folder = Path(destination_folder)
 
-file_base_name = input("Enter the name of file: ")
-mp4_name = f"{file_base_name}.mp4"
-txt_name = f"{file_base_name}.txt"
+   def get_most_recent_folder(self):
+      all_items_in_directory = [os.path.join(self.directory, d) for d in os.listdir(self.directory) if
+                                os.path.isdir(os.path.join(self.directory, d))]
+      most_recent_folder = max(all_items_in_directory, key=os.path.getmtime, default=None)
+      return Path(most_recent_folder) if most_recent_folder else None
 
-destination_folder = Path(fr"C:\Users\saru-\Documents\Always Zen Tutoring")
-directory = r"C:\Users\saru-\Documents\Zoom"
-all_items_in_directory = [os.path.join(directory, d) for d in os.listdir(directory) if os.path.isdir(os.path.join(directory, d))]
-most_recent_folder_str = max(all_items_in_directory, key=os.path.getmtime, default=None)
+   def move_files(self, file_base_name):
+      most_recent_folder = self.get_most_recent_folder()
+      moved_files = []
 
-if most_recent_folder_str:
-   # convert to a path object
-   most_recent_folder = Path(most_recent_folder_str)
-   print(f"most recently created folder is: {most_recent_folder}")
+      if most_recent_folder:
+         print(f"most recently created folder is: {most_recent_folder}")
+         txt_path = most_recent_folder / "meeting_saved_chat.txt"
+         mp4_path = next(most_recent_folder.glob("*.mp4"), None)
 
-   if most_recent_folder.exists() and most_recent_folder.is_dir():
-      # Ensure the destination folder exists
-      destination_folder.parent.mkdir(parents=True, exist_ok=True)  # This ensures the parent folder of Documents exists
+         if txt_path.exists():
+            new_txt_path = self.destination_folder / f"{file_base_name}.txt"
+            shutil.move(str(txt_path), str(new_txt_path))
+            moved_files.append(str(new_txt_path))
+         else:
+            print("Text file 'meeting_chat.txt' not found.")
 
-      #search for each path
-      mp4_path = most_recent_folder / mp4_name
-      txt_path = most_recent_folder / txt_name
-
-      if mp4_path.exists():
-         shutil.move(str(mp4_path), str(destination_folder))
-         print(f"Moved mp4 file: {mp4_name} to {destination_folder}")
+         if mp4_path and mp4_path.exists():
+            new_mp4_path = self.destination_folder / f"{file_base_name}.mp4"
+            shutil.move(str(mp4_path), str(new_mp4_path))
+            moved_files.append(str(new_mp4_path))
+         else:
+            print("MP4 file not found.")
 
       else:
-         print(f"mp4 file {mp4_name} not found in {most_recent_folder}")
+         print("No recent folder found in the directory.")
 
-      if txt_path.exists():
-         shutil.move(str(txt_path), str(destination_folder))
-         print(f"Moved txt file: {txt_name} to {destination_folder}")
-
-      else:
-         print(f"txt file {txt_name} not found in {most_recent_folder}")
-
+      return moved_files
+      
